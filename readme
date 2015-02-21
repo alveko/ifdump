@@ -1,0 +1,34 @@
+
+### create veth pair of interfaces
+
+ip link add type veth
+echo 1 > /proc/sys/net/ipv6/conf/veth0/disable_ipv6
+echo 1 > /proc/sys/net/ipv6/conf/veth1/disable_ipv6
+ip link set veth0 up
+ip link set veth1 up
+ip addr add 10.1.1.1/24 dev veth1
+
+### create vlan interface on one end
+
+ip link add link veth1 name veth1.10 type vlan id 10
+echo 1 > /proc/sys/net/ipv6/conf/veth1.10/disable_ipv6
+ip link set veth1.10 up
+ip addr add 10.1.10.1/24 dev veth1.10
+
+# ip route add 10.1.1.0/24 dev veth1
+# ip route add 10.1.10.0/24 dev veth1.10
+
+ip link set veth0 down
+ip link set veth1 down
+ip link del veth0
+
+### listen on veth0
+
+tcpdump -xxvvni veth0
+./ifdump -pc 10 veth0
+
+### ping from veth1
+
+ping -c 1 10.1.1.2
+ping -c 1 10.1.10.2
+
